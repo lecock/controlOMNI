@@ -30,7 +30,7 @@ unsigned int contador=0;
 unsigned int arranque=0;
 unsigned int estacione;
 
-void setup()                                            //Configuracion de puertos
+void setup()                                            //Configuracion de los puertos 
 {
  DDRC=B00000001;                                        //define PORTC,1,2,3,4,5,6,7 como entrada y PORTC,0 como salida, que es la que se usa para comunicaciones
  DDRA=B11111111;                                        //define PORTA como salida
