@@ -2,7 +2,7 @@
 #include <SdFat.h>                        //incluye la libreria de la memoria
 #include <SFEMP3Shield.h>                 //incluye la libreria del MP3
 SFEMP3Shield MP3player;                   //crea la variable para controlar las instrucciones del MP3
-#define start PINC,1                      //interruptor start
+#define start PINC,1                      //interruptor start tralala tralala
 #define cwmder PORTA,0
 #define ccwmder PORTA,1
 #define cwmizq PORTA,2
