@@ -1,0 +1,232 @@
+#include <SPI.h>                          //incluye la libreria SPI para la comunicación
+#include <SdFat.h>                        //incluye la libreria de la memoria
+#include <SFEMP3Shield.h>                 //incluye la libreria del MP3
+SFEMP3Shield MP3player;                   //crea la variable para controlar las instrucciones del MP3
+#define start PINC,1                      //interruptor start
+#define cwmder PORTA,0
+#define ccwmder PORTA,1
+#define cwmizq PORTA,2
+#define ccwmizq PORTA,3
+#define estacion1 PORTA,4
+#define estacion2 PORTA,5
+#define estacion3 PORTA,6
+#define estacion4 PORTA,7
+long sensorlineader;
+long sensorlineaizq;
+long sensorestacion;
+unsigned int pwmder;
+unsigned int pwmizq;
+unsigned int cwmotorizq;
+unsigned int ccwmotorizq;
+unsigned int cwmotorder;
+unsigned int ccwmotorder;
+unsigned int contadorestacion=0;
+unsigned int cont=0;
+unsigned int tiempoinicio=0;
+unsigned int tiempoactual=0;
+unsigned int devuelve=0;
+unsigned int fin=0;
+unsigned int contador=0;
+unsigned int arranque=0;
+unsigned int estacione;
+
+void setup()                                            //Configuracion de puertos
+{
+ DDRC=B00000001;                                        //define PORTC,1,2,3,4,5,6,7 como entrada y PORTC,0 como salida, que es la que se usa para comunicaciones
+ DDRA=B11111111;                                        //define PORTA como salida
+ pinMode(53,OUTPUT);                                    //asigna el pin53 como salida comunicaciones
+ MP3player.begin();                                     //inicializa la libreria MP3
+ //attachInterrupt(2,interrupcionobstaculo, FALLING);   //habilita y llama la interrupcion externa 2 por obstaculo
+ Serial2.begin(9600);                                   //Define la velocidad de la comunicacion a 9600 baudios
+}
+
+void detectaestacion()
+{
+ estacione=1;
+ while((tiempoactual-tiempoinicio)<5000)     //ambos motores. Además, por 8 segundos va a esperar cuantas lineas detecta        
+ {                                        //el sensor estacion, incrementando en uno el contador estacion
+   if((analogRead(1)<127)&&(estacione==1))
+   {
+     contadorestacion=contadorestacion+1;
+     estacione=0;
+    }
+   if((analogRead(1))>127) 
+   {
+     estacione=1;
+   }
+   tiempoactual=millis();
+ }
+}
+
+void mensajeestacion()
+{
+  if (contadorestacion==1)
+   {
+    if(devuelve==0) 
+    {
+      MP3player.playTrack(1);
+      analogWrite(2,0);
+      analogWrite(5,0); 
+    }
+    bitSet(PORTA,estacion1);
+    delay(3000);
+    bitClear(PORTA,estacion1);
+    if(devuelve==1) 
+    {
+      while(bitRead(PINC,start)==1)
+      {
+      analogWrite(2,0);
+      analogWrite(5,0); 
+      }
+     }
+    }
+  if (contadorestacion==2)
+   {
+     if(devuelve==0) 
+     {
+      MP3player.playTrack(2);
+      analogWrite(2,0);
+      analogWrite(5,0); 
+     }
+     bitSet(PORTA,estacion2);
+     delay(3000);
+     bitClear(PORTA,estacion2);
+    }
+  if (contadorestacion==3)
+   {
+     if(devuelve==0)
+     {
+      MP3player.playTrack(3);
+      analogWrite(2,0);
+      analogWrite(5,0);
+     }
+     bitSet(PORTA,estacion3); 
+     delay(3000);
+     bitClear(PORTA,estacion3);
+    }
+  if (contadorestacion==4)
+    {
+     if(devuelve==0)
+     {
+      MP3player.playTrack(4);
+      analogWrite(2,0);
+      analogWrite(5,0);
+     }
+     bitSet(PORTA,estacion4); 
+     delay(3000);
+     bitClear(PORTA,estacion4);
+    }
+  if (contadorestacion==5)
+    {
+     if(devuelve==0)
+     {
+      MP3player.playTrack(5);
+      analogWrite(2,0);
+      analogWrite(5,0);
+     }
+     bitSet(PORTA,estacion1);
+     bitSet(PORTA,estacion2); 
+     delay(3000);
+     bitClear(PORTA,estacion1);
+     bitClear(PORTA,estacion2);
+    }
+  if (contadorestacion==6)
+    {
+     if(devuelve==0)
+     {
+      MP3player.playTrack(6);
+      analogWrite(2,0);
+      analogWrite(5,0);
+     }
+     bitSet(PORTA,estacion1);
+     bitSet(PORTA,estacion2); 
+     bitSet(PORTA,estacion3); 
+     delay(3000);
+     bitClear(PORTA,estacion1);
+     bitClear(PORTA,estacion2);
+     bitClear(PORTA,estacion3); 
+    }
+   if (contadorestacion==7)
+    {
+     devuelve=1;
+     MP3player.playTrack(7);
+     analogWrite(2,0);
+     analogWrite(5,0);
+     bitSet(PORTA,estacion1);
+     bitSet(PORTA,estacion2); 
+     bitSet(PORTA,estacion3); 
+     bitSet(PORTA,estacion4); 
+     delay(3000);
+     bitClear(PORTA,estacion1);
+     bitClear(PORTA,estacion2);
+     bitClear(PORTA,estacion3);
+     bitClear(PORTA,estacion4);
+     bitClear(PORTA,cwmder);    //apaga motorder CW
+     bitSet(PORTA,ccwmder);     //enciende motorder CCW
+     bitClear(PORTA,ccwmizq);   //apaga motorizq CCW  
+     bitSet(PORTA,cwmizq);      //enciende motorizq CW y OBDC se devuelve retrocediendo hasta la estacion 1
+    }
+  contadorestacion=0;          //despues de dar el mensaje inicializa contadorestacion en 0
+  analogWrite(2,250);
+  analogWrite(5,250); 
+}
+
+void serialEvent2()         //subrutina para cuando llega un mensaje desde el XBee para que ODBDC se devuelva
+{
+ devuelve=1;
+ analogWrite(5,0);
+ analogWrite(8,0);
+ bitSet(PORTA,cwmder);    //enciende motorder CW
+ bitClear(PORTA,ccwmder); //apaga motorder CCW
+ bitSet(PORTA,ccwmizq);   //enciende motorizq CCW  
+ bitClear(PORTA,cwmizq);  //apaga motorizq CW
+}  
+
+void loop() 
+ {
+  sensorlineaizq=map(sensorlineaizq,0,1023,0,255);
+  sensorlineader=map(sensorlineader,0,1023,0,255);
+  for(;bitRead(PINC,start)==1;)
+   {
+     bitSet(PORTA,cwmder);    //enciende motorder CW
+     bitClear(PORTA,ccwmder); //apaga motorder CCW
+     bitSet(PORTA,cwmizq);    //enciende motorizq CW
+     bitClear(PORTA,ccwmizq); //apaga motorizq CCW
+     while((analogRead(6)<127)&&(analogRead(7)<127)&&(bitRead(PINC,start==1)))                  //para arrancar OBDC alguien debe posicionar correctamente
+     {
+      analogWrite(2,250);
+      analogWrite(5,250);
+      tiempoinicio=millis();                                                                         
+      tiempoactual=millis();
+      if(analogRead(1)>127)
+      {
+       detectaestacion();
+       mensajeestacion();
+       analogWrite(2,250);
+       analogWrite(5,250);
+      }
+     }
+     
+     while((analogRead(6)>127)&&(bitRead(PINC,start==1)))                                       //si detecta la linea derecha, debe girar mas lento motor derecho
+      {
+        analogWrite(2,10);
+      }
+      analogWrite(2,250);
+      analogWrite(5,250);
+      
+     while((analogRead(7)>127)&&(bitRead(PINC,start==1)))                                       //si detecta la linea izq, debe girar mas lento motor izq
+        {
+         analogWrite(5,10);
+        }
+      analogWrite(5,250);
+      analogWrite(2,250);
+   }
+   if(bitRead(PINC,start)==0)                                                                   //si start se apaga, debe pararse los motores
+   {
+     analogWrite(2,0);
+     analogWrite(5,0);
+     devuelve=0;
+     estacione=0;
+     contadorestacion=0;
+   }
+  }
